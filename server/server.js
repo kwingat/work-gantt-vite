@@ -8,6 +8,10 @@ const compression = require('compression');
 const routes = require('./routes');
 // const { MongoClient } = require('mongodb');
 const mongoose = require('mongoose');
+const { username, password } = require('./config.js');
+
+console.log({ username, password });
+const uri = `mongodb+srv://${username}:${password}@work-org.2naexlw.mongodb.net/`;
 
 const app = express();
 
@@ -39,10 +43,22 @@ process.on('exist', () => {
 });
 
 mongoose.set('strictQuery', false);
-const main = async () => {
-  const uri = 'mongodb://0.0.0.0:27017/test';
-  await mongoose.connect(uri);
+const clientOptions = {
+  serverApi: { version: '1', strict: true, deprecationErrors: true },
 };
-main().catch(console.error);
+async function run() {
+  try {
+    // Create a Mongoose client with a MongoClientOptions object to set the Stable API version
+    await mongoose.connect(uri, clientOptions);
+    await mongoose.connection.db.admin().command({ ping: 1 });
+    console.log(
+      'Pinged your deployment. You successfully connected to MongoDB!',
+    );
+  } finally {
+    // Ensures that the client will close when you finish/error
+    await mongoose.disconnect();
+  }
+}
+run().catch(console.dir);
 
 module.exports = app;
